@@ -1,3 +1,16 @@
+## Skills
+
+### book-club
+
+Spoiler-safe book discussion skill. Located at `.claude/skills/book-club/SKILL.md`.
+
+- User names a book and their current position; Claude confirms before discussing.
+- **Hard spoiler wall**: never reveal anything beyond the user's stated position.
+- **No hallucination**: every claim must cite book text (from `books/`) or a web search result with URL.
+- Maintains reading notes (characters, events, themes) in `memory/book_<slugified-name>.md`.
+- Resumes from prior notes on subsequent conversations.
+
+---
 
 Default to using Bun instead of Node.js.
 

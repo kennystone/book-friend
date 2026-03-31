@@ -1,5 +1,5 @@
 {
-    "name": "kindle-scanner-infra",
+    "name": "book-friend-infra",
     "main": "index.ts",
     "devDependencies": {
         "@types/node": "^18",

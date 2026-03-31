@@ -1,8 +1,11 @@
 {
-  "name": "kindle-scanner",
+  "name": "book-friend",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "infra"
+  ],
   "devDependencies": {
     "@types/bun": "latest"
   },

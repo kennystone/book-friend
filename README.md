@@ -1,34 +1,44 @@
-# kindle-scanner
+# book-friend
 
-Screenshot Kindle web reader pages, OCR them with GCP Cloud Vision, and assemble structured markdown.
+Talk about the book you're reading with an AI that won't spoil it.
 
-## Prerequisites
+book-friend is a Claude Code project that gives you a reading companion. Tell it what book you're on and where you are — it discusses characters, themes, and context without ever revealing what happens next. It cites everything: direct quotes from the text or web sources with URLs. No hallucination, no guessing.
+
+Between conversations, it keeps notes on characters, events, and your open questions so you can pick up where you left off.
+
+## How it works
+
+1. Scan your Kindle book into markdown (screenshots + OCR)
+2. Open Claude Code in this project and start talking about what you've read
+3. The `/book-club` skill activates — it reads only up to your stated position and searches the web for literary context
+
+## Scanning a Book
+
+Screenshots pages from Kindle's web reader, OCRs them with GCP Cloud Vision, and assembles structured markdown.
+
+### Prerequisites
 
 - [Bun](https://bun.sh) runtime
-- Google Cloud Platform account with Cloud Vision API enabled
+- [Pulumi](https://www.pulumi.com/docs/install/)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (authenticated with `gcloud auth login`)
+- [Claude Code](https://claude.ai/claude-code)
 
-## Install
+### Install
 
 ```bash
 bun install
 bunx playwright install chromium
 ```
 
-## GCP Setup
+### GCP Setup
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a project (or select an existing one)
-3. Enable the **Cloud Vision API**: APIs & Services > Enable APIs > search "Cloud Vision API" > Enable
-4. Create a service account: IAM & Admin > Service Accounts > Create
-5. Grant the **Cloud Vision API User** role
-6. Create a JSON key: Actions > Manage Keys > Add Key > JSON
-7. Set the env var:
-   ```bash
-   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/key.json
-   ```
-   Or copy `.env.example` to `.env` and fill in the path.
+Pulumi handles provisioning (Vision API, service account, IAM):
 
-## Usage
+```bash
+cd infra && pulumi up
+```
+
+### Usage
 
 ```bash
 # Full pipeline: capture, OCR, and assemble
@@ -42,7 +52,7 @@ bun run src/index.ts --book B0XXXXXX --ocr-only
 bun run src/index.ts --book B0XXXXXX --assemble-only --title "My Book"
 ```
 
-## Output
+### Output
 
 ```
 output/<asin>/
@@ -52,9 +62,7 @@ output/<asin>/
   chapters.json   # (optional) Manual chapter overrides
 ```
 
-### Manual Chapter Overrides
-
-Create `output/<asin>/chapters.json` to specify chapter boundaries:
+Create `output/<asin>/chapters.json` to manually specify chapter boundaries:
 
 ```json
 {
@@ -62,3 +70,12 @@ Create `output/<asin>/chapters.json` to specify chapter boundaries:
   "Chapter 2: Getting Started": 25
 }
 ```
+
+## Discussing a Book
+
+Open Claude Code in this project, say what you're reading and where you are. The book-club skill activates automatically (or invoke it with `/book-club`).
+
+- **No spoilers** — nothing beyond your stated position, no hints, no "keep reading"
+- **No hallucination** — every claim cites the book text or a web source with URL
+- **No assumptions** — if it can't verify something, it says so
+- **Memory** — tracks characters, events, and themes between conversations
