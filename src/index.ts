@@ -24,7 +24,7 @@ Options:
 `);
 }
 
-function parseArgs(argv: string[]) {
+export function parseArgs(argv: string[]) {
   const args: Record<string, string | boolean> = {};
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
@@ -44,7 +44,7 @@ function parseArgs(argv: string[]) {
   return args;
 }
 
-function extractAsin(bookArg: string): string {
+export function extractAsin(bookArg: string): string {
   const urlMatch = bookArg.match(/asin=([A-Z0-9]+)/i);
   if (urlMatch) return urlMatch[1]!;
   if (/^[A-Z0-9]+$/i.test(bookArg)) return bookArg;
@@ -100,7 +100,9 @@ async function main() {
   console.log("\nDone!");
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err.message);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error("Fatal error:", err.message);
+    process.exit(1);
+  });
+}

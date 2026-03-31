@@ -95,7 +95,7 @@ export async function assemble(outputDir: string, bookTitle: string) {
   console.log(`  Wrote ${outputPath} (${markdown.length} chars)`);
 }
 
-function detectChapterHeading(text: string): string | null {
+export function detectChapterHeading(text: string): string | null {
   const firstLines = text.split("\n").slice(0, 5);
 
   for (const line of firstLines) {
@@ -119,7 +119,7 @@ function detectChapterHeading(text: string): string | null {
   return null;
 }
 
-function cleanPage(text: string): string {
+export function cleanPage(text: string): string {
   let cleaned = text;
 
   // Join hyphenated line breaks
@@ -131,7 +131,7 @@ function cleanPage(text: string): string {
   return cleaned.trim();
 }
 
-function trimDuplicateTrailingPages(pages: string[]): string[] {
+export function trimDuplicateTrailingPages(pages: string[]): string[] {
   if (pages.length < 3) return pages;
 
   // Find where consecutive duplicate pages start from the end
@@ -152,7 +152,7 @@ function trimDuplicateTrailingPages(pages: string[]): string[] {
   return pages;
 }
 
-function removeRepeatedHeadersFooters(pages: string[]) {
+export function removeRepeatedHeadersFooters(pages: string[]) {
   if (pages.length < 5) return;
 
   // Check first line of each page for repeated header
