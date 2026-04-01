@@ -1,11 +1,11 @@
 import { capture } from "./capture.ts";
-import { ocr } from "./ocr.ts";
+import { ocr, type OcrEngine } from "./ocr.ts";
 import { assemble } from "./assemble.ts";
 import { join } from "path";
 
 function printUsage() {
   console.log(`
-kindle-scanner — Screenshot Kindle web reader pages, OCR them, and assemble markdown.
+book-friend — Screenshot Kindle web reader pages, OCR them, and assemble markdown.
 
 Usage:
   bun run src/index.ts --book <asin> --pages <count> [options]
@@ -17,6 +17,8 @@ Required:
 Options:
   --title <title>       Book title for the markdown heading (default: ASIN)
   --output-dir <dir>    Output directory (default: output/<asin>)
+  --engine <engine>     OCR engine: scribe (default, local) or gcp (Cloud Vision)
+  --concurrency <N>     Number of parallel OCR workers (default: auto-detected)
   --capture-only        Only run the capture phase
   --ocr-only            Only run the OCR phase
   --assemble-only       Only run the assemble phase
@@ -72,6 +74,8 @@ async function main() {
   const pages = pagesArg ? parseInt(pagesArg, 10) : undefined;
   const title = (args.title as string) || asin;
   const outputDir = (args.outputDir as string) || join("output", asin);
+  const engine = (args.engine as OcrEngine) || "scribe";
+  const concurrency = args.concurrency ? parseInt(args.concurrency as string, 10) : undefined;
 
   const runCapture = !args.ocrOnly && !args.assembleOnly;
   const runOcr = !args.captureOnly && !args.assembleOnly;
@@ -88,8 +92,8 @@ async function main() {
   }
 
   if (runOcr) {
-    console.log(`\n=== OCR Phase ===`);
-    await ocr(outputDir);
+    console.log(`\n=== OCR Phase (${engine}) ===`);
+    await ocr(outputDir, engine, concurrency);
   }
 
   if (runAssemble) {

@@ -14,14 +14,18 @@ Between conversations, it keeps notes on characters, events, and your open quest
 
 ## Scanning a Book
 
-Screenshots pages from Kindle's web reader, OCRs them with GCP Cloud Vision, and assembles structured markdown.
+Screenshots pages from Kindle's web reader, OCRs them, and assembles structured markdown.
+
+Two OCR engines are available:
+
+- **Scribe.js** (default) — runs locally, no cloud setup needed
+- **GCP Cloud Vision** — requires GCP project with Pulumi
 
 ### Prerequisites
 
 - [Bun](https://bun.sh) runtime
-- [Pulumi](https://www.pulumi.com/docs/install/)
-- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (authenticated with `gcloud auth login`)
 - [Claude Code](https://claude.ai/claude-code)
+- For GCP engine only: [Pulumi](https://www.pulumi.com/docs/install/) and [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)
 
 ### Install
 
@@ -30,9 +34,7 @@ bun install
 bunx playwright install chromium
 ```
 
-### GCP Setup
-
-Pulumi handles provisioning (Vision API, service account, IAM):
+### GCP Setup (only if using `--engine gcp`)
 
 ```bash
 cd infra && pulumi up
@@ -41,14 +43,18 @@ cd infra && pulumi up
 ### Usage
 
 ```bash
-# Full pipeline: capture, OCR, and assemble
+# Full pipeline with local OCR (default)
 bun run src/index.ts --book B0XXXXXX --pages 300 --title "My Book"
+
+# Use GCP Cloud Vision instead
+bun run src/index.ts --book B0XXXXXX --pages 300 --title "My Book" --engine gcp
 
 # First run opens a browser for Amazon login (credentials are saved for next time)
 
 # Run individual phases
 bun run src/index.ts --book B0XXXXXX --capture-only --pages 300
 bun run src/index.ts --book B0XXXXXX --ocr-only
+bun run src/index.ts --book B0XXXXXX --ocr-only --engine gcp
 bun run src/index.ts --book B0XXXXXX --assemble-only --title "My Book"
 ```
 
