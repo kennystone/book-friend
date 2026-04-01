@@ -3,7 +3,13 @@ import { readdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { runPool } from "./pool";
 
-export async function ocrPages(screenshotDir: string, ocrDir: string, concurrency?: number) {
+// Use project-local gcloud credentials instead of global
+const localAdc = join(import.meta.dir, "..", ".gcloud", "application_default_credentials.json");
+if (await Bun.file(localAdc).exists()) {
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = localAdc;
+}
+
+export async function ocrPages(screenshotDir: string, ocrDir: string, concurrency?: number, onProgress?: (current: number, total: number) => void) {
   const files = (await readdir(screenshotDir))
     .filter((f) => f.endsWith(".png"))
     .sort();
@@ -14,7 +20,6 @@ export async function ocrPages(screenshotDir: string, ocrDir: string, concurrenc
   }
 
   const workers = concurrency ?? 10;
-  console.log(`Found ${files.length} screenshots to OCR (engine: gcp, concurrency: ${workers})`);
 
   const client = new vision.ImageAnnotatorClient();
   let completed = 0;
@@ -27,10 +32,9 @@ export async function ocrPages(screenshotDir: string, ocrDir: string, concurrenc
 
     await writeFile(join(ocrDir, `${baseName}.txt`), text);
     completed++;
-    console.log(`  OCR page ${completed}/${files.length}: ${text.length} chars`);
+    onProgress?.(completed, files.length);
   });
 
-  console.log(`OCR results saved to ${ocrDir}`);
 }
 
 async function ocrWithRetry(

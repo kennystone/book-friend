@@ -1,5 +1,15 @@
 ## Skills
 
+### guide
+
+Scan a Kindle book into markdown. Located at `.claude/skills/guide/SKILL.md`.
+
+- Checks environment setup (Bun, Playwright, GCP auth) and walks user through install if needed
+- Guides user through capture, OCR, and assembly via the CLI
+- Auto-detects page count from Kindle web reader
+- After scanning, offers to analyze the text and generate `chapters.json` for accurate chapter breaks
+- Copies final markdown to `books/` for use by book-club skill
+
 ### book-club
 
 Spoiler-safe book discussion skill. Located at `.claude/skills/book-club/SKILL.md`.
@@ -9,6 +19,18 @@ Spoiler-safe book discussion skill. Located at `.claude/skills/book-club/SKILL.m
 - **No hallucination**: every claim must cite book text (from `books/`) or a web search result with URL.
 - Maintains reading notes (characters, events, themes) in `memory/book_<slugified-name>.md`.
 - Resumes from prior notes on subsequent conversations.
+
+---
+
+See `README.md` for installation, CLI usage, GCP setup, and performance benchmarks.
+
+## GCP Auth
+
+Auth is directory-scoped via `CLOUDSDK_CONFIG=.gcloud`. Never use global gcloud auth.
+- Application default credentials: `.gcloud/application_default_credentials.json`
+- Service account key: `.gcloud/kindle-scanner-sa-key.json`
+- Pulumi backend: local (`file://~/.pulumi-local`), stack: `dev`
+- To re-authenticate: `CLOUDSDK_CONFIG=.gcloud gcloud auth application-default login`
 
 ---
 

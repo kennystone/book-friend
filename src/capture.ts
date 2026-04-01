@@ -15,16 +15,11 @@ const KINDLE_CHROME_SELECTORS = [
   ".bookmark.desktop",                     // Bookmark button
 ];
 
-export async function capture(
-  asin: string,
-  pages: number,
-  outputDir: string,
-) {
-  const screenshotDir = join(outputDir, "screenshots");
-  await mkdir(screenshotDir, { recursive: true });
-
+async function openBook(asin: string): Promise<{
+  context: Awaited<ReturnType<typeof chromium.launchPersistentContext>>;
+  page: import("playwright").Page;
+}> {
   console.log("Launching browser...");
-  // Tall headless browser — more content per screenshot
   const context = await chromium.launchPersistentContext(AUTH_DIR, {
     headless: true,
     viewport: { width: 1280, height: 1800 },
@@ -34,15 +29,11 @@ export async function capture(
 
   // Navigate to Kindle web reader
   await page.goto(KINDLE_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
-
-  // Wait a moment for any redirects to settle
   await page.waitForTimeout(3000);
 
-  // Check if we need to log in — did we get redirected away from read.amazon.com?
+  // Check if we need to log in
   const currentUrl = page.url();
-  const needsLogin = !currentUrl.includes("read.amazon.com");
-  if (needsLogin) {
-    // Need to log in — relaunch headed so user can interact
+  if (!currentUrl.includes("read.amazon.com")) {
     await context.close();
     console.log("Login required — opening visible browser...");
 
@@ -60,8 +51,7 @@ export async function capture(
     console.log("Logged in successfully! Closing login browser...");
     await loginContext.close();
 
-    // Re-launch headless with saved auth
-    return capture(asin, pages, outputDir);
+    return openBook(asin);
   }
   console.log("Auth OK — already logged in");
 
@@ -69,12 +59,91 @@ export async function capture(
   const bookUrl = `${KINDLE_URL}/?asin=${asin}`;
   console.log(`Opening book: ${bookUrl}`);
   await page.goto(bookUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await page.waitForTimeout(4000); // Wait for book to render
+  await page.waitForTimeout(4000);
 
   // Go to beginning of book
   console.log("Navigating to beginning of book...");
   await goToBeginning(page);
   await page.waitForTimeout(2000);
+
+  return { context, page };
+}
+
+export async function detectPageCount(asin: string): Promise<{ pages: number; context: Awaited<ReturnType<typeof chromium.launchPersistentContext>>; page: import("playwright").Page }> {
+  const { context, page } = await openBook(asin);
+
+  // Tap the center of the page to make the Kindle UI chrome appear
+  const viewport = page.viewportSize()!;
+  await page.mouse.click(viewport.width / 2, viewport.height / 2);
+  await page.waitForTimeout(1500);
+
+  // Try multiple selectors for the footer
+  const selectors = [
+    "div.footer-label-color-default",
+    "#kr-footer-container",
+    "[class*=footer]",
+    "[class*=scrubber]",
+  ];
+
+  let footerText: string | null = null;
+  for (const sel of selectors) {
+    const el = page.locator(sel);
+    const count = await el.count();
+    for (let i = 0; i < count; i++) {
+      const text = await el.nth(i).textContent({ timeout: 2000 }).catch(() => null);
+      if (text && /(?:page|location)\s+\d+\s+of\s+\d+/i.test(text)) {
+        footerText = text;
+        break;
+      }
+    }
+    if (footerText) break;
+  }
+
+  if (!footerText) {
+    // Last resort: search the entire page text
+    const bodyText = await page.locator("body").textContent().catch(() => "");
+    const anyMatch = bodyText?.match(/((?:Page|Location)\s+\d+\s+of\s+\d+)/i);
+    if (anyMatch) {
+      footerText = anyMatch[1]!;
+    }
+  }
+
+  if (!footerText) {
+    await context.close();
+    throw new Error("Could not find page count in any element");
+  }
+
+  // Match either "Page X of Y" or "Location X of Y"
+  const match = footerText.match(/(?:Page|Location)\s+\d+\s+of\s+(\d+)/i);
+  if (!match) {
+    await context.close();
+    throw new Error(`Could not parse page count from footer: "${footerText}"`);
+  }
+
+  const pages = parseInt(match[1]!, 10);
+  console.log(`Detected ${pages} total pages`);
+  return { pages, context, page };
+}
+
+export async function capture(
+  asin: string,
+  pages: number,
+  outputDir: string,
+  onProgress?: (current: number, total: number) => void,
+  existingSession?: { context: Awaited<ReturnType<typeof chromium.launchPersistentContext>>; page: import("playwright").Page },
+) {
+  const screenshotDir = join(outputDir, "screenshots");
+  await mkdir(screenshotDir, { recursive: true });
+
+  let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>>;
+  let page: import("playwright").Page;
+
+  if (existingSession) {
+    context = existingSession.context;
+    page = existingSession.page;
+  } else {
+    ({ context, page } = await openBook(asin));
+  }
 
   // Hide Kindle UI chrome
   await hideKindleChrome(page);
@@ -86,15 +155,12 @@ export async function capture(
     await context.close();
     process.exit(1);
   }
-  console.log("Found content element: #kr-renderer");
-
-  console.log(`Capturing ${pages} pages...`);
   for (let i = 1; i <= pages; i++) {
     const filename = `page_${String(i).padStart(4, "0")}.png`;
     const filepath = join(screenshotDir, filename);
 
     await contentEl.screenshot({ path: filepath });
-    console.log(`  Captured page ${i}/${pages}`);
+    onProgress?.(i, pages);
 
     if (i < pages) {
       await page.keyboard.press("ArrowRight");
@@ -102,7 +168,6 @@ export async function capture(
     }
   }
 
-  console.log(`Screenshots saved to ${screenshotDir}`);
   await context.close();
 }
 

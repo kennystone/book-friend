@@ -55,6 +55,12 @@ describe("parseArgs", () => {
     expect(args.outputDir).toBe("/out");
   });
 
+  test("parses --agent flag", () => {
+    const args = parseArgs(["--agent", "--book", "B123", "--pages", "10"]);
+    expect(args.agent).toBe(true);
+    expect(args.book).toBe("B123");
+  });
+
   test("returns empty object for no args", () => {
     expect(parseArgs([])).toEqual({});
   });

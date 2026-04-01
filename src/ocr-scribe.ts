@@ -9,7 +9,7 @@ function defaultConcurrency(): number {
   return Math.max(1, Math.min(cores - 2, Math.floor(ramGB / 1.5)));
 }
 
-export async function ocrPages(screenshotDir: string, ocrDir: string, concurrency?: number) {
+export async function ocrPages(screenshotDir: string, ocrDir: string, concurrency?: number, onProgress?: (current: number, total: number) => void) {
   const files = (await readdir(screenshotDir))
     .filter((f) => f.endsWith(".png"))
     .sort();
@@ -20,7 +20,6 @@ export async function ocrPages(screenshotDir: string, ocrDir: string, concurrenc
   }
 
   const workers = concurrency ?? defaultConcurrency();
-  console.log(`Found ${files.length} screenshots to OCR (engine: scribe, workers: ${workers})`);
 
   const workerScript = resolve(import.meta.dir, "ocr-worker.ts");
   let completed = 0;
@@ -39,8 +38,7 @@ export async function ocrPages(screenshotDir: string, ocrDir: string, concurrenc
 
       if (exitCode === 0) {
         completed++;
-        const text = await Bun.file(outputPath).text();
-        console.log(`  OCR page ${completed}/${files.length}: ${text.length} chars`);
+        onProgress?.(completed, files.length);
         return;
       }
 
@@ -55,5 +53,4 @@ export async function ocrPages(screenshotDir: string, ocrDir: string, concurrenc
     }
   });
 
-  console.log(`OCR results saved to ${ocrDir}`);
 }

@@ -3,6 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "book-friend": "./src/index.ts"
+  },
+  "scripts": {
+    "scan": "bun run src/index.ts"
+  },
   "workspaces": [
     "infra"
   ],
@@ -13,6 +19,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@clack/prompts": "^1.2.0",
     "@google-cloud/vision": "^5.3.5",
     "playwright": "^1.58.2",
     "scribe.js-ocr": "^0.10.1"

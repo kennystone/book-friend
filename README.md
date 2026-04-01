@@ -16,10 +16,10 @@ Between conversations, it keeps notes on characters, events, and your open quest
 
 Screenshots pages from Kindle's web reader, OCRs them, and assembles structured markdown.
 
-Two OCR engines are available:
+Two OCR modes:
 
-- **Scribe.js** (default) — runs locally, no cloud setup needed
-- **GCP Cloud Vision** — requires GCP project with Pulumi
+- **Scribe** (default, recommended) — easy setup, great results for text-only books, free, slower (your computer will get hot!)
+- **GCP Vision** — 27x faster, requires some advanced setup, not free
 
 ### Prerequisites
 
@@ -36,27 +36,64 @@ bunx playwright install chromium
 
 ### GCP Setup (only if using `--engine gcp`)
 
+1. Install [Pulumi](https://www.pulumi.com/docs/install/) and [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)
+
+2. Create a GCP project and authenticate:
+
 ```bash
-cd infra && pulumi up
+gcloud projects create my-book-scanner --name="Book Scanner"
+gcloud auth application-default login
+```
+
+3. Deploy the infrastructure (enables Vision API, creates service account):
+
+```bash
+cd infra
+bun install
+pulumi config set gcp:project my-book-scanner
+pulumi up
+cd ..
+```
+
+4. Save the service account key for OCR requests:
+
+```bash
+pulumi -C infra stack output serviceAccountKey --show-secrets | base64 -d > .gcloud/kindle-scanner-sa-key.json
 ```
 
 ### Usage
 
 ```bash
-# Full pipeline with local OCR (default)
-bun run src/index.ts --book B0XXXXXX --pages 300 --title "My Book"
+# Full pipeline — page count auto-detected
+bun run scan --book B0XXXXXX --title "My Book"
 
-# Use GCP Cloud Vision instead
-bun run src/index.ts --book B0XXXXXX --pages 300 --title "My Book" --engine gcp
+# Use GCP Cloud Vision instead of local Scribe
+bun run scan --book B0XXXXXX --title "My Book" --engine gcp
+
+# Explicit page count
+bun run scan --book B0XXXXXX --pages 300 --title "My Book"
 
 # First run opens a browser for Amazon login (credentials are saved for next time)
 
 # Run individual phases
-bun run src/index.ts --book B0XXXXXX --capture-only --pages 300
-bun run src/index.ts --book B0XXXXXX --ocr-only
-bun run src/index.ts --book B0XXXXXX --ocr-only --engine gcp
-bun run src/index.ts --book B0XXXXXX --assemble-only --title "My Book"
+bun run scan --book B0XXXXXX --capture-only
+bun run scan --book B0XXXXXX --ocr-only
+bun run scan --book B0XXXXXX --ocr-only --engine gcp
+bun run scan --book B0XXXXXX --assemble-only --title "My Book"
 ```
+
+### Performance
+
+Per 100 pages (benchmarked on M-series Mac):
+
+| Phase | Time |
+|-------|------|
+| **Capture** (screenshots) | ~160s |
+| **OCR** — GCP Vision | ~8s |
+| **OCR** — Scribe (local) | ~210s |
+| **Assemble** | <1s |
+
+GCP Vision is ~27x faster than Scribe with equivalent accuracy on Kindle screenshots. Scribe is free and fully offline.
 
 ### Output
 
