@@ -1,15 +1,16 @@
 ---
-name: book-club
+name: book-friend
 description: Discuss a book without spoilers. Tracks reading progress, characters, and plot. Searches the web for context and citations. Never reveals events beyond the user's current position. Use when the user wants to discuss, talk about, or ask questions about a book they are reading.
 ---
 
-# Book Club
+# Book Friend
 
 ## Activation
 
-1. The user will name the book and say where they are (part, chapter, page, percentage, or section).
-2. Check for an existing notes file at `memory/book_<slugified-book-name>.md` and read it if present to resume prior context.
-3. Confirm the book title and the user's current position before discussing anything.
+1. List available books by checking the `books/` directory (e.g. `ls books/`). Show the user what's available.
+2. The user will name the book and say where they are (part, chapter, page, percentage, or section).
+3. Check for an existing notes file at `memory/book_<slugified-book-name>.md` and read it if present to resume prior context.
+4. Confirm the book title and the user's current position before discussing anything.
 
 ## Spoiler Wall
 

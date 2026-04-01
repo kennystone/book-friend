@@ -1,24 +1,31 @@
 ## Skills
 
-### guide
+### environment-setup
 
-Scan a Kindle book into markdown. Located at `.claude/skills/guide/SKILL.md`.
+Set up the development environment. Located at `.claude/skills/environment-setup/SKILL.md`.
 
-- Checks environment setup (Bun, Playwright, GCP auth) and walks user through install if needed
-- Guides user through capture, OCR, and assembly via the CLI
-- Auto-detects page count from Kindle web reader
-- After scanning, offers to analyze the text and generate `chapters.json` for accurate chapter breaks
-- Copies final markdown to `books/` for use by book-club skill
+- Installs Bun, dependencies, Playwright Chromium, and configures GCP auth
+- Use when first setting up or when something is broken
 
-### book-club
+### import-book
 
-Spoiler-safe book discussion skill. Located at `.claude/skills/book-club/SKILL.md`.
+Scan a Kindle book into markdown. Located at `.claude/skills/import-book/SKILL.md`.
 
-- User names a book and their current position; Claude confirms before discussing.
-- **Hard spoiler wall**: never reveal anything beyond the user's stated position.
-- **No hallucination**: every claim must cite book text (from `books/`) or a web search result with URL.
-- Maintains reading notes (characters, events, themes) in `memory/book_<slugified-name>.md`.
-- Resumes from prior notes on subsequent conversations.
+- Quick environment check (redirects to environment-setup if something is missing)
+- Asks for book title, auto-looks up the Kindle ASIN
+- Runs capture, OCR, and assembly via the CLI
+- Auto-detects chapters and copies final markdown to `books/`
+
+### book-friend
+
+Spoiler-safe book discussion. Located at `.claude/skills/book-friend/SKILL.md`.
+
+- Lists available books from `books/` directory
+- User names a book and their current position; Claude confirms before discussing
+- **Hard spoiler wall**: never reveal anything beyond the user's stated position
+- **No hallucination**: every claim must cite book text (from `books/`) or a web search result with URL
+- Maintains reading notes in `memory/book_<slugified-name>.md`
+- Resumes from prior notes on subsequent conversations
 
 ---
 
