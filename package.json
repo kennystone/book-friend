@@ -4,10 +4,12 @@
   "type": "module",
   "private": true,
   "bin": {
-    "book-friend": "./src/index.ts"
+    "bf": "./src/bf.ts",
+    "book-scan": "./src/index.ts"
   },
   "scripts": {
-    "scan": "bun run src/index.ts"
+    "scan": "bun run src/index.ts",
+    "bf": "bun run src/bf.ts"
   },
   "workspaces": [
     "infra"
@@ -21,6 +23,7 @@
   "dependencies": {
     "@clack/prompts": "^1.2.0",
     "@google-cloud/vision": "^5.3.5",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "playwright": "^1.58.2",
     "scribe.js-ocr": "^0.10.1"
   },

@@ -147,3 +147,31 @@ Documented as a checklist (in the implementation plan, not automated — spawnin
 ## Open questions
 
 None. All three design choices (one-way, CLI wrapper, embed SKILL.md in instructions) are settled.
+
+---
+
+## Addendum (2026-04-06): Upgraded to two-way
+
+After running the one-way design end-to-end, the user wanted `say` to print Claude's reply directly instead of having to switch terminal windows. The channel was upgraded to two-way:
+
+- A `reply` MCP tool is exposed by the channel server. Claude calls it with `{ request_id, text }`.
+- Each inbound notification carries `meta.request_id` so Claude can pair its reply with the originating POST.
+- A `ReplyRegistry` helper owns the pending-request map, the per-request timeout (5 minutes), and the abort-signal cleanup.
+- `handleRequest` now blocks on `registry.register(...)` until the matching `reply` arrives, then returns the reply text as the HTTP response body.
+- `say.ts` reads the response body and prints it.
+- The `instructions` string was rewritten to tell Claude to always reply via the tool and never address the user in the terminal directly.
+- `Bun.serve` is configured with `idleTimeout: 0` so long-poll connections aren't dropped while Claude is thinking (a real reply can take a minute or two if Claude does web searches).
+
+The original sender-gating decisions (none, because of `127.0.0.1`-only binding), port number (8789), and project-local scope all stand. The spoiler-wall behavior is unchanged because it lives in the skill rules (which are still in the system prompt), not in the transport.
+
+Implementation plan: [`docs/superpowers/plans/2026-04-06-book-friend-channel-two-way.md`](../plans/2026-04-06-book-friend-channel-two-way.md)
+
+## Addendum (2026-04-06): Rename and global install
+
+Two small follow-ups after the two-way work was verified:
+
+- **CLI renamed from `say` to `bf`.** macOS ships `/usr/bin/say` as the text-to-speech command; installing a global `say` would shadow it. `src/say.ts` → `src/bf.ts`; `package.json` bin and scripts entries updated to `bf`. No functional change.
+- **Installed globally via `bun link`.** From the project root, `bun link` registers the package with Bun and symlinks `bf` into `~/.bun/bin`, which is already on the user's PATH. The CLI is now callable as `bf "..."` from any directory. Because the global entry is a symlink back to `src/bf.ts`, source edits take effect immediately with no re-link.
+- **Project-level `reply` tool pre-approval.** Committed `.claude/settings.json` containing `"mcp__book-friend__reply"` in the allow list, so Claude doesn't prompt for the tool on each session. The `--dangerously-load-development-channels` confirmation at startup cannot be bypassed during the research preview; that remains the one interactive prompt per session.
+
+The channel server itself is still project-scoped (registered via `.mcp.json` with a relative path), so Claude Code still needs to be started from the project root. Only the CLI is global.

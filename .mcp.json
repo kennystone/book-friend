@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "book-friend": { "command": "bun", "args": ["./src/channel.ts"] }
+  }
+}

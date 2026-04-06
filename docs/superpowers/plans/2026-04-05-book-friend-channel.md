@@ -460,8 +460,10 @@ Replace the `scripts` object:
 
 - [ ] **Step 2: Delete the old CLI**
 
-Run: `git rm src/chat.ts`
-Expected: `src/chat.ts` removed from both the working tree and the git index.
+Run: `rm src/chat.ts`
+Expected: `src/chat.ts` removed from the working tree.
+
+(Note: in this branch's history, `chat.ts` was never committed to git — it existed only as a working-tree file from a prior session. Use plain `rm`, not `git rm`.)
 
 - [ ] **Step 3: Verify `bun run say` works end-to-end (no channel running)**
 
@@ -480,7 +482,7 @@ git add package.json
 git commit -m "Wire say CLI into package.json and remove old chat.ts"
 ```
 
-Note: the `git rm` in Step 2 already staged the deletion, and it's included in this commit because `package.json` changes and the file removal belong together (both are part of replacing `chat.ts` with `say.ts`).
+Note: `chat.ts` was untracked, so the `rm` in Step 2 affects only the working tree — there's nothing about `chat.ts` to stage. The commit captures only the `package.json` edits, which conceptually replace the `chat.ts` bin entry with the `say.ts` one.
 
 ---
 
